@@ -14,6 +14,7 @@ import {
 import { Header } from './components/Header';
 import { Sidebar, TabId } from './components/Sidebar';
 import { DemoScenarioModal } from './components/DemoScenarioModal';
+import { FailureSimulationModal } from './components/FailureSimulationModal';
 import { AiChatDrawer } from './components/AiChatDrawer';
 import { InvoicePdfModal } from './components/InvoicePdfModal';
 
@@ -42,6 +43,7 @@ export default function App() {
 
   // Modals
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [isFailureOpen, setIsFailureOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [pdfInvoiceTarget, setPdfInvoiceTarget] = useState<Invoice | null>(null);
 
@@ -98,6 +100,7 @@ export default function App() {
       {/* Top Navigation Header */}
       <Header
         onOpenDemo={() => setIsDemoOpen(true)}
+        onOpenFailureModal={() => setIsFailureOpen(true)}
         onOpenChat={() => setIsChatOpen(true)}
         onRefreshData={fetchCoreData}
         settings={settings}
@@ -189,6 +192,13 @@ export default function App() {
       <DemoScenarioModal
         isOpen={isDemoOpen}
         onClose={() => setIsDemoOpen(false)}
+        onCompleted={fetchCoreData}
+      />
+
+      {/* Failure Simulation Engine Modal */}
+      <FailureSimulationModal
+        isOpen={isFailureOpen}
+        onClose={() => setIsFailureOpen(false)}
         onCompleted={fetchCoreData}
       />
 

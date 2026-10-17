@@ -329,3 +329,94 @@ export interface WorkflowStep {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'EXCEPTION' | 'RECOVERED';
   metadata?: Record<string, any>;
 }
+
+export type UserRole = 'Logistics Manager' | 'Operations Specialist' | 'Customer';
+
+export interface A2AMessage {
+  id: string;
+  correlation_id: string;
+  timestamp: string;
+  sender_agent: string;
+  receiver_agent: string;
+  task_type: string;
+  order_id?: string;
+  status: 'SENT' | 'RECEIVED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  payload: Record<string, any>;
+  latency_ms?: number;
+}
+
+export interface GuardrailCheck {
+  id: string;
+  timestamp: string;
+  input_text: string;
+  pii_detected: boolean;
+  pii_masked: string;
+  prompt_injection_detected: boolean;
+  input_valid: boolean;
+  authorization_passed: boolean;
+  grounding_verified: boolean;
+  hallucination_detected: boolean;
+  status: 'PASSED' | 'REFUSED' | 'FLAGGED';
+  reason?: string;
+}
+
+export interface GroundingEvidence {
+  decision: string;
+  confidence: number;
+  is_grounded: boolean;
+  evidence_points: string[];
+  source_records: {
+    type: string;
+    id: string;
+    verified_value: string;
+  }[];
+  unsupported_claims_detected: number;
+}
+
+export interface TokenUsageMetric {
+  id: string;
+  timestamp: string;
+  agent: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  cost_usd: number;
+  cost_inr: number;
+  latency_sec: number;
+  task: string;
+}
+
+export interface AiEvaluationMetrics {
+  groundedness_rate: number;
+  hallucination_rate: number;
+  tool_success_rate: number;
+  task_completion_rate: number;
+  recovery_success_rate: number;
+  avg_latency_sec: number;
+  total_tokens_today: number;
+  total_llm_calls_today: number;
+  estimated_cost_inr_today: number;
+  estimated_cost_usd_today: number;
+  most_expensive_agent: string;
+  guardrail_refusal_count: number;
+  parallel_execution_savings_sec: number;
+}
+
+export type FailureSimulationType =
+  | 'OUT_OF_STOCK'
+  | 'CARRIER_DELAY'
+  | 'API_TIMEOUT'
+  | 'INVALID_ADDRESS'
+  | 'FAILED_DELIVERY'
+  | 'AGENT_FAILURE'
+  | 'HALLUCINATION';
+
+export interface WorkflowTiming {
+  total_time_sec: number;
+  llm_time_sec: number;
+  db_time_sec: number;
+  tool_time_sec: number;
+  a2a_time_sec: number;
+  parallel_savings_sec: number;
+}

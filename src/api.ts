@@ -15,6 +15,14 @@ import {
   Product,
   SystemSettings,
   WorkflowStep,
+  A2AMessage,
+  GuardrailCheck,
+  TokenUsageMetric,
+  AiEvaluationMetrics,
+  FailureSimulationType,
+  UserRole,
+  WorkflowTiming,
+  GroundingEvidence,
 } from './types';
 
 export const api = {
@@ -75,6 +83,10 @@ export const api = {
     steps: WorkflowStep[];
     success: boolean;
     message: string;
+    timing?: WorkflowTiming;
+    a2a_messages?: A2AMessage[];
+    grounding_evidence?: GroundingEvidence;
+    guardrail_status?: string;
   }> {
     const res = await fetch(`/api/orders/${orderId}/process`, {
       method: 'POST',
@@ -253,6 +265,8 @@ export const api = {
     incident_id: string;
     recovery_plan_id: string;
     summary: string;
+    timing?: WorkflowTiming;
+    a2a_messages?: A2AMessage[];
   }> {
     const res = await fetch('/api/scenario/run-complete-demo', {
       method: 'POST',
@@ -260,16 +274,89 @@ export const api = {
     return res.json();
   },
 
-  // Chat
+  // Chat with Guardrail, Grounding Evidence, Model Routing & Token accounting
   async sendChatMessage(prompt: string, history: any[] = []): Promise<{
     text: string;
     toolsUsed: { name: string; args: any; result: any }[];
     activeAgent: string;
+    groundingEvidence?: GroundingEvidence;
+    guardrailStatus?: 'PASSED' | 'REFUSED';
+    guardrailReason?: string;
+    modelUsed?: string;
+    tokensUsed?: { input: number; output: number; total: number; cost_inr: number };
+    latency_sec?: number;
   }> {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, history }),
+    });
+    return res.json();
+  },
+
+  // Agent-to-Agent (A2A) Messaging
+  async getA2AMessages(correlationId?: string): Promise<A2AMessage[]> {
+    const url = correlationId ? `/api/a2a?correlation_id=${correlationId}` : '/api/a2a';
+    const res = await fetch(url);
+    return res.json();
+  },
+
+  // AI Safety Guardrails
+  async getGuardrailChecks(): Promise<GuardrailCheck[]> {
+    const res = await fetch('/api/guardrails');
+    return res.json();
+  },
+
+  async checkGuardrail(inputText: string): Promise<GuardrailCheck> {
+    const res = await fetch('/api/guardrails/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input_text: inputText }),
+    });
+    return res.json();
+  },
+
+  // Token Economics
+  async getTokenMetrics(): Promise<TokenUsageMetric[]> {
+    const res = await fetch('/api/tokens');
+    return res.json();
+  },
+
+  // AI Evaluation Metrics
+  async getEvaluationMetrics(): Promise<AiEvaluationMetrics> {
+    const res = await fetch('/api/evaluation');
+    return res.json();
+  },
+
+  // Failure Simulation Mode (Demo / Test Mode)
+  async simulateFailure(type: FailureSimulationType, targetId?: string): Promise<{
+    success: boolean;
+    type: FailureSimulationType;
+    message: string;
+    incident?: Incident;
+    recovery_plan?: RecoveryPlan;
+    resolution: string;
+    recovery_action: string;
+  }> {
+    const res = await fetch('/api/simulation/failure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, target_id: targetId }),
+    });
+    return res.json();
+  },
+
+  // Role-Based Access Control
+  async getUserRole(): Promise<{ role: UserRole }> {
+    const res = await fetch('/api/role');
+    return res.json();
+  },
+
+  async setUserRole(role: UserRole): Promise<{ role: UserRole }> {
+    const res = await fetch('/api/role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
     });
     return res.json();
   },

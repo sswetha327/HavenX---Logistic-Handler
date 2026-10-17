@@ -32,6 +32,17 @@ import {
   get_invoice,
   record_feedback,
   get_historical_performance,
+  getA2AMessages,
+  getGuardrailChecks,
+  logGuardrailCheck,
+  checkPii,
+  checkPromptInjection,
+  getTokenMetrics,
+  getAiEvaluationMetrics,
+  simulateFailure,
+  getCurrentUserRole,
+  setCurrentUserRole,
+  maskCustomerRecord,
 } from './server/tools';
 import { LogisticsSupervisor } from './server/orchestrator';
 import { handleLogisticsChat, extractOrderFromDocument } from './server/gemini';
@@ -258,7 +269,14 @@ app.post('/api/recovery-plans/:id/execute', (req, res) => {
 // 6. Risk Scoring & Returns
 app.get('/api/customers', (req, res) => {
   const db = getDb();
-  res.json(db.customers);
+  const role = getCurrentUserRole();
+  let list = db.customers;
+  if (role === 'Customer') {
+    list = list.filter(c => c.id === 'CUST-1024' || c.name.toLowerCase().includes('swetha'));
+    if (list.length === 0 && db.customers.length > 0) list = [db.customers[0]];
+  }
+  const masked = list.map(c => maskCustomerRecord(c, role));
+  res.json(masked);
 });
 
 app.get('/api/risk/:customerId', (req, res) => {
@@ -411,7 +429,84 @@ app.post('/api/multimodal/extract-order', async (req, res) => {
   }
 });
 
-// 15. Database Reset
+// 15. Agent-to-Agent (A2A) Messaging Handoffs
+app.get('/api/a2a', (req, res) => {
+  const { correlation_id } = req.query;
+  const messages = getA2AMessages(correlation_id as string);
+  res.json(messages);
+});
+
+// 16. AI Safety Guardrails & Audit Checks
+app.get('/api/guardrails', (req, res) => {
+  res.json(getGuardrailChecks());
+});
+
+app.post('/api/guardrails/check', (req, res) => {
+  try {
+    const { input_text } = req.body;
+    const injection = checkPromptInjection(input_text || '');
+    const pii = checkPii(input_text || '');
+    const isRefused = injection.isInjection;
+
+    const record = logGuardrailCheck({
+      input_text: input_text || '',
+      pii_detected: pii.hasPii,
+      pii_masked: pii.maskedText,
+      prompt_injection_detected: injection.isInjection,
+      input_valid: !injection.isInjection,
+      authorization_passed: true,
+      grounding_verified: !injection.isInjection,
+      hallucination_detected: false,
+      status: isRefused ? 'REFUSED' : 'PASSED',
+      reason: injection.reason || (pii.hasPii ? 'Sensitive PII detected and sanitized' : 'Passed safety standards'),
+    });
+
+    res.json(record);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 17. Token Economics & Cost Tracking
+app.get('/api/tokens', (req, res) => {
+  res.json(getTokenMetrics());
+});
+
+// 18. AI Evaluation Metrics & Health KPIs
+app.get('/api/evaluation', (req, res) => {
+  try {
+    const metrics = getAiEvaluationMetrics();
+    res.json(metrics);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 19. Failure Simulation Engine (Demo / Test Mode)
+app.post('/api/simulation/failure', async (req, res) => {
+  try {
+    const { type, target_id } = req.body;
+    if (!type) return res.status(400).json({ error: 'Simulation type required' });
+    const result = await simulateFailure(type, target_id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 20. Role-Based Access Control (RBAC) User Switcher
+app.get('/api/role', (req, res) => {
+  res.json({ role: getCurrentUserRole() });
+});
+
+app.post('/api/role', (req, res) => {
+  const { role } = req.body;
+  if (!role) return res.status(400).json({ error: 'Role is required' });
+  const updated = setCurrentUserRole(role);
+  res.json({ role: updated });
+});
+
+// 21. Database Reset
 app.post('/api/db/reset', (req, res) => {
   const fresh = resetDbToSeed();
   res.json({ success: true, orders_count: fresh.orders.length });

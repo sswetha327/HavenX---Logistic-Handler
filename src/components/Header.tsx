@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { NotificationItem, SystemSettings } from '../types';
+import { NotificationItem, SystemSettings, UserRole } from '../types';
 import {
   Bell,
   Play,
@@ -13,10 +13,13 @@ import {
   AlertTriangle,
   Info,
   X,
+  Bug,
+  UserCheck,
 } from 'lucide-react';
 
 interface Props {
   onOpenDemo: () => void;
+  onOpenFailureModal: () => void;
   onOpenChat: () => void;
   onRefreshData: () => void;
   settings: SystemSettings | null;
@@ -25,6 +28,7 @@ interface Props {
 
 export const Header: React.FC<Props> = ({
   onOpenDemo,
+  onOpenFailureModal,
   onOpenChat,
   onRefreshData,
   settings,
@@ -33,6 +37,22 @@ export const Header: React.FC<Props> = ({
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [isTogglingMode, setIsTogglingMode] = useState(false);
+  const [currentRole, setCurrentRole] = useState<UserRole>('Logistics Manager');
+
+  useEffect(() => {
+    api.getUserRole().then(r => setCurrentRole(r.role)).catch(() => {});
+  }, []);
+
+  const handleRoleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRole = e.target.value as UserRole;
+    setCurrentRole(newRole);
+    try {
+      await api.setUserRole(newRole);
+      onRefreshData();
+    } catch (err: any) {
+      alert(`Role change failed: ${err.message}`);
+    }
+  };
 
   const fetchNotifs = async () => {
     try {
@@ -107,13 +127,29 @@ export const Header: React.FC<Props> = ({
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        {/* RBAC Role Switcher */}
+        <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs">
+          <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+          <span className="text-[10px] uppercase font-bold text-slate-500">Role:</span>
+          <select
+            value={currentRole}
+            onChange={handleRoleChange}
+            className="bg-transparent font-semibold text-slate-800 text-xs focus:outline-none cursor-pointer"
+            title="Switch User Role to test RBAC & PII masking rules"
+          >
+            <option value="Logistics Manager">Logistics Manager (Admin)</option>
+            <option value="Operations Specialist">Operations Specialist</option>
+            <option value="Customer">Customer (CUST_1024)</option>
+          </select>
+        </div>
+
         {/* Mode Toggle: Assisted vs Autonomous */}
         <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
           <button
             onClick={toggleMode}
             disabled={isTogglingMode}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all ${
               settings?.mode === 'ASSISTED'
                 ? 'bg-white text-slate-800 shadow-2xs'
                 : 'text-slate-500 hover:text-slate-700'
@@ -121,12 +157,12 @@ export const Header: React.FC<Props> = ({
             title="Assisted Mode: AI recommends recovery plans; Human Operator approves high-impact decisions."
           >
             <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-            <span>Assisted Mode</span>
+            <span className="hidden md:inline">Assisted</span>
           </button>
           <button
             onClick={toggleMode}
             disabled={isTogglingMode}
-            className={`px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all ${
               settings?.mode === 'AUTONOMOUS'
                 ? 'bg-purple-600 text-white shadow-2xs'
                 : 'text-slate-500 hover:text-slate-700'
@@ -134,14 +170,24 @@ export const Header: React.FC<Props> = ({
             title="Autonomous Mode: AI automatically executes low & medium-risk recovery actions and carrier switches."
           >
             <Zap className="w-3.5 h-3.5 text-amber-300" />
-            <span>Autonomous Mode</span>
+            <span className="hidden md:inline">Autonomous</span>
           </button>
         </div>
+
+        {/* Failure Simulation Engine */}
+        <button
+          onClick={onOpenFailureModal}
+          className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all"
+          title="Test real-world logistics failures (Out of stock, carrier delays, API timeout, hallucinations)"
+        >
+          <Bug className="w-3.5 h-3.5 text-rose-600" />
+          <span className="hidden lg:inline">Simulate Failure</span>
+        </button>
 
         {/* 21-Step Demo Simulation Runner */}
         <button
           onClick={onOpenDemo}
-          className="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-all"
+          className="px-3 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all"
         >
           <Play className="w-3.5 h-3.5 fill-current" />
           <span>Run 21-Step Demo</span>
