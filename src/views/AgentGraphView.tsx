@@ -126,7 +126,7 @@ export const AgentGraphView: React.FC = () => {
         <div>
           <h2 className="font-bold text-base text-slate-900">Multi-Agent Architecture & Audit Trail</h2>
           <p className="text-xs text-slate-500">
-            Supervisor Orchestrator coordinates 7 specialized AI agents with deterministic tools and real database mutations.
+            Powered by Google Agent Development Kit (ADK) — Supervisor Orchestrator coordinates specialized subagents with type-safe tools and real database mutations.
           </p>
         </div>
         <div className="flex items-center gap-2">

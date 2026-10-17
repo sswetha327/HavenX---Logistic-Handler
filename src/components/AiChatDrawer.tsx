@@ -33,8 +33,8 @@ export const AiChatDrawer: React.FC<Props> = ({ isOpen, onClose, onNavigateToTab
     {
       id: 'msg-welcome',
       sender: 'agent',
-      agentName: 'Supervisor Agent',
-      text: "Hello! I am the central **Logistics Supervisor Agent**. I coordinate the Order Handler, Inventory, Risk/Return, Fulfillment, Invoice, and Self-Healing Exception agents.\n\nHow can I assist your logistics operations today?",
+      agentName: 'Supervisor Agent (Google ADK)',
+      text: "Hello! I am the central **Logistics Supervisor Agent** powered by the **Google Agent Development Kit (ADK)**. I coordinate the Order Handler, Inventory, Risk/Return, Fulfillment, Invoice, and Self-Healing Exception agents.\n\nHow can I assist your logistics operations today?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -116,7 +116,7 @@ export const AiChatDrawer: React.FC<Props> = ({ isOpen, onClose, onNavigateToTab
             <h3 className="font-semibold text-sm">Supervisor Logistics AI</h3>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Direct database tool-calling & reasoning</span>
+              <span>Google ADK Multi-Agent Orchestrator</span>
             </div>
           </div>
         </div>
