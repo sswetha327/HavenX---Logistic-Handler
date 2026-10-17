@@ -2,5 +2,7 @@
   "name": "Smart Logistics Handler Agent",
   "description": "Autonomous multi-agent logistics management system with end-to-end orchestration, inventory routing, risk detection, carrier selection, self-healing recovery, and feedback learning.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
